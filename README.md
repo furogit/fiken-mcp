@@ -18,6 +18,7 @@ All mutating operations (POST, PUT, PATCH, DELETE) require explicit user approva
 - **Invoices & Credit Notes**: Create, send, and manage invoices and credit notes with full draft support
 - **Contacts**: Full CRUD for customers and suppliers, including contact persons
 - **Purchases & Sales**: Record and manage purchases and sales transactions
+- **Payments**: List, register, and delete payments on existing sales and purchases; pay an invoice via `fiken_create_invoice_payment`
 - **Offers & Order Confirmations**: Create and send offers, convert to invoices
 - **Accounting**: Bookkeeping accounts, bank accounts, journal entries, transactions
 - **Reports**: Product sales reports, account balances
