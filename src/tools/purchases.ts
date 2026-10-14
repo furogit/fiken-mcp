@@ -389,4 +389,80 @@ export function register(server: McpServer) {
             }
         },
     );
+
+    server.registerTool(
+        "fiken_list_purchase_payments",
+        {
+            ...R,
+            description: "List payments on a purchase",
+            inputSchema: z.object({ purchaseId: z.number().int() }),
+        },
+        async ({ purchaseId }) => {
+            try {
+                return ok(await get(cp(`/purchases/${purchaseId}/payments`)));
+            } catch (e) {
+                return err(e);
+            }
+        },
+    );
+
+    server.registerTool(
+        "fiken_get_purchase_payment",
+        {
+            ...R,
+            description: "Get one payment on a purchase",
+            inputSchema: z.object({
+                purchaseId: z.number().int(),
+                paymentId: z.number().int(),
+            }),
+        },
+        async ({ purchaseId, paymentId }) => {
+            try {
+                return ok(await get(cp(`/purchases/${purchaseId}/payments/${paymentId}`)));
+            } catch (e) {
+                return err(e);
+            }
+        },
+    );
+
+    server.registerTool(
+        "fiken_create_purchase_payment",
+        {
+            ...W,
+            description:
+                "Register a payment on an existing purchase. Amounts in currency cents; foreign payments also need amountInNok.",
+            inputSchema: z.object({
+                purchaseId: z.number().int(),
+                ...paymentSchema.shape,
+            }),
+        },
+        async ({ purchaseId, ...body }) => {
+            try {
+                return ok(await mutate("POST", cp(`/purchases/${purchaseId}/payments`), body));
+            } catch (e) {
+                return err(e);
+            }
+        },
+    );
+
+    server.registerTool(
+        "fiken_delete_purchase_payment",
+        {
+            ...D,
+            description: "Delete a payment on a purchase",
+            inputSchema: z.object({
+                purchaseId: z.number().int(),
+                paymentId: z.number().int(),
+            }),
+        },
+        async ({ purchaseId, paymentId }) => {
+            try {
+                return ok(
+                    await mutate("DELETE", cp(`/purchases/${purchaseId}/payments/${paymentId}`)),
+                );
+            } catch (e) {
+                return err(e);
+            }
+        },
+    );
 }

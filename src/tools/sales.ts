@@ -289,4 +289,78 @@ export function register(server: McpServer) {
             }
         },
     );
+
+    server.registerTool(
+        "fiken_list_sale_payments",
+        {
+            ...R,
+            description: "List payments on a sale",
+            inputSchema: z.object({ saleId: z.number().int() }),
+        },
+        async ({ saleId }) => {
+            try {
+                return ok(await get(cp(`/sales/${saleId}/payments`)));
+            } catch (e) {
+                return err(e);
+            }
+        },
+    );
+
+    server.registerTool(
+        "fiken_get_sale_payment",
+        {
+            ...R,
+            description: "Get one payment on a sale",
+            inputSchema: z.object({
+                saleId: z.number().int(),
+                paymentId: z.number().int(),
+            }),
+        },
+        async ({ saleId, paymentId }) => {
+            try {
+                return ok(await get(cp(`/sales/${saleId}/payments/${paymentId}`)));
+            } catch (e) {
+                return err(e);
+            }
+        },
+    );
+
+    server.registerTool(
+        "fiken_create_sale_payment",
+        {
+            ...W,
+            description:
+                "Register a payment on an existing sale. Amounts in currency cents; foreign payments also need amountInNok.",
+            inputSchema: z.object({
+                saleId: z.number().int(),
+                ...paymentSchema.shape,
+            }),
+        },
+        async ({ saleId, ...body }) => {
+            try {
+                return ok(await mutate("POST", cp(`/sales/${saleId}/payments`), body));
+            } catch (e) {
+                return err(e);
+            }
+        },
+    );
+
+    server.registerTool(
+        "fiken_delete_sale_payment",
+        {
+            ...D,
+            description: "Delete a payment on a sale",
+            inputSchema: z.object({
+                saleId: z.number().int(),
+                paymentId: z.number().int(),
+            }),
+        },
+        async ({ saleId, paymentId }) => {
+            try {
+                return ok(await mutate("DELETE", cp(`/sales/${saleId}/payments/${paymentId}`)));
+            } catch (e) {
+                return err(e);
+            }
+        },
+    );
 }

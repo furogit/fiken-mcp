@@ -367,4 +367,40 @@ export function register(server: McpServer) {
             }
         },
     );
+
+    server.registerTool(
+        "fiken_create_invoice_payment",
+        {
+            ...W,
+            description:
+                "Register a payment on an invoice (resolves sale.saleId). Amounts in currency cents; foreign payments also need amountInNok.",
+            inputSchema: z.object({
+                invoiceId: z.number().int(),
+                date: z.string().describe("Payment date YYYY-MM-DD"),
+                account: z.string().describe('Payment account, e.g. "1920:10001"'),
+                amount: z.number().int().describe("Amount paid in cents"),
+                amountInNok: z
+                    .number()
+                    .int()
+                    .optional()
+                    .describe("NOK amount for foreign currency payments"),
+                currency: z.string().optional().describe('ISO 4217, e.g. "EUR"'),
+                fee: z.number().int().optional().describe("Payment fee in NOK cents"),
+            }),
+        },
+        async ({ invoiceId, ...body }) => {
+            try {
+                const invoice = (await get(cp(`/invoices/${invoiceId}`))) as {
+                    sale?: { saleId?: number };
+                    invoiceNumber?: number;
+                };
+                const saleId = invoice?.sale?.saleId;
+                if (!saleId) throw new Error(`Invoice ${invoiceId} has no sale.saleId`);
+                const result = await mutate("POST", cp(`/sales/${saleId}/payments`), body);
+                return ok({ saleId, invoiceNumber: invoice.invoiceNumber, ...(result as object) });
+            } catch (e) {
+                return err(e);
+            }
+        },
+    );
 }
