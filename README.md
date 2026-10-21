@@ -134,6 +134,8 @@ Add to `~/.cursor/mcp.json`:
 | **Misc**                | `fiken_create_product_sales_report`, `fiken_list_projects`, `fiken_list_time_entries`, `fiken_list_activities`, `fiken_list_time_users`, `fiken_list_inbox`                                                                                                                                                                                                                                                                                                                    |
 
 > **Note**: Amounts are in NOK øre (1/100 of a krone). Dates use `YYYY-MM-DD` format.
+>
+> Offer drafts use Fiken's `invoiceishDraftRequest` (same as invoice drafts): required `type` (defaults to `offer`), `customerId`, and `daysUntilDueDate`. Line items use `comment` and `incomeAccount`, not `account` or `contactId`.
 
 ---
 
