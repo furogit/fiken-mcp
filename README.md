@@ -28,7 +28,13 @@ All mutating operations (POST, PUT, PATCH, DELETE) require explicit user approva
 
 ## Configuration
 
-Add the server to your AI client config. No installation needed — `npx`/`pnpx` will fetch it automatically.
+Add the server to your AI client config. No installation needed. `npx`/`pnpx` will fetch it automatically.
+
+To run this fork from GitHub (until the offer-draft fix is on npm):
+
+```bash
+npx -y github:furogit/fiken-mcp
+```
 
 ### Getting Your Credentials
 
@@ -47,7 +53,7 @@ Add the server to your AI client config. No installation needed — `npx`/`pnpx`
     "mcpServers": {
         "fiken": {
             "command": "npx",
-            "args": ["-y", "fiken-mcp"],
+            "args": ["-y", "github:furogit/fiken-mcp"],
             "env": {
                 "FIKEN_API_TOKEN": "your-personal-token-here",
                 "FIKEN_COMPANY_SLUG": "your-company-slug"
@@ -64,7 +70,7 @@ Or with pnpm:
     "mcpServers": {
         "fiken": {
             "command": "pnpx",
-            "args": ["fiken-mcp"],
+            "args": ["github:furogit/fiken-mcp"],
             "env": {
                 "FIKEN_API_TOKEN": "your-personal-token-here",
                 "FIKEN_COMPANY_SLUG": "your-company-slug"
@@ -83,7 +89,7 @@ Add to `~/.claude.json` under `mcpServers`:
     "mcpServers": {
         "fiken": {
             "command": "npx",
-            "args": ["-y", "fiken-mcp"],
+            "args": ["-y", "github:furogit/fiken-mcp"],
             "env": {
                 "FIKEN_API_TOKEN": "your-personal-token-here",
                 "FIKEN_COMPANY_SLUG": "your-company-slug"
@@ -102,7 +108,7 @@ Add to `~/.cursor/mcp.json`:
     "mcpServers": {
         "fiken": {
             "command": "npx",
-            "args": ["-y", "fiken-mcp"],
+            "args": ["-y", "github:furogit/fiken-mcp"],
             "env": {
                 "FIKEN_API_TOKEN": "your-personal-token-here",
                 "FIKEN_COMPANY_SLUG": "your-company-slug"
@@ -134,6 +140,8 @@ Add to `~/.cursor/mcp.json`:
 | **Misc**                | `fiken_create_product_sales_report`, `fiken_list_projects`, `fiken_list_time_entries`, `fiken_list_activities`, `fiken_list_time_users`, `fiken_list_inbox`                                                                                                                                                                                                                                                                                                                    |
 
 > **Note**: Amounts are in NOK øre (1/100 of a krone). Dates use `YYYY-MM-DD` format.
+>
+> Offer drafts use Fiken's `invoiceishDraftRequest` (same as invoice drafts): required `type` (defaults to `offer`), `customerId`, and `daysUntilDueDate`. Line items use `comment` and `incomeAccount`, not `account` or `contactId`.
 
 ---
 

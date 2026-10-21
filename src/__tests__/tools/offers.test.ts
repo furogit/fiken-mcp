@@ -8,7 +8,7 @@ vi.mock("../../client.js", () => ({
 }));
 
 import { get, mutate } from "../../client.js";
-import { register } from "../../tools/offers.js";
+import { register, offerDraftSchema } from "../../tools/offers.js";
 import { createMockServer } from "../helpers.js";
 
 const mockGet = vi.mocked(get);
@@ -118,15 +118,77 @@ describe("fiken_list_offer_drafts", () => {
     });
 });
 
+describe("offer draft schema", () => {
+    it("matches Fiken invoiceishDraftRequest and defaults type to offer", () => {
+        const parsed = offerDraftSchema.parse({
+            customerId: 42,
+            daysUntilDueDate: 14,
+            issueDate: "2024-01-15",
+            lines: [
+                {
+                    quantity: 1,
+                    description: "Consulting",
+                    comment: "On site",
+                    incomeAccount: "3000",
+                    unitPrice: 100000,
+                },
+            ],
+        });
+        expect(parsed.type).toBe("offer");
+        expect(parsed.customerId).toBe(42);
+        expect(parsed.lines?.[0].comment).toBe("On site");
+        expect(parsed.lines?.[0].incomeAccount).toBe("3000");
+        expect(parsed).not.toHaveProperty("contactId");
+        expect(parsed.lines?.[0]).not.toHaveProperty("account");
+    });
+
+    it("requires customerId and daysUntilDueDate", () => {
+        const missingCustomer = offerDraftSchema.safeParse({ daysUntilDueDate: 14 });
+        const missingDue = offerDraftSchema.safeParse({ customerId: 42 });
+        expect(missingCustomer.success).toBe(false);
+        expect(missingDue.success).toBe(false);
+    });
+
+    it("registers create and update tools with the invoiceish draft schema", () => {
+        const createTool = server.getTool("fiken_create_offer_draft") as {
+            inputSchema: typeof offerDraftSchema;
+        };
+        const updateTool = server.getTool("fiken_update_offer_draft") as {
+            inputSchema: { shape: Record<string, unknown> };
+        };
+        expect(createTool.inputSchema).toBe(offerDraftSchema);
+        expect(updateTool.inputSchema.shape.customerId).toBeDefined();
+        expect(updateTool.inputSchema.shape.type).toBeDefined();
+        expect(updateTool.inputSchema.shape.draftId).toBeDefined();
+        expect(updateTool.inputSchema.shape.contactId).toBeUndefined();
+    });
+});
+
 describe("fiken_create_offer_draft", () => {
-    it("calls POST /offers/drafts with body", async () => {
+    it("calls POST /offers/drafts with invoiceishDraftRequest fields", async () => {
         mockMutate.mockResolvedValue({
             created: true,
             location: "/companies/test-slug/offers/drafts/1",
         });
-        const body = { issueDate: "2024-01-15", contactId: 42 };
+        const body = {
+            customerId: 42,
+            daysUntilDueDate: 14,
+            issueDate: "2024-01-15",
+            lines: [
+                {
+                    quantity: 1,
+                    description: "Consulting",
+                    comment: "On site",
+                    incomeAccount: "3000",
+                    unitPrice: 100000,
+                },
+            ],
+        };
         const result = await server.getHandler("fiken_create_offer_draft")(body);
-        expect(mockMutate).toHaveBeenCalledWith("POST", "/companies/test-slug/offers/drafts", body);
+        expect(mockMutate).toHaveBeenCalledWith("POST", "/companies/test-slug/offers/drafts", {
+            type: "offer",
+            ...body,
+        });
         expect(result.content[0].text).toContain("created");
     });
 
@@ -156,11 +218,20 @@ describe("fiken_get_offer_draft", () => {
 describe("fiken_update_offer_draft", () => {
     it("calls PUT /offers/drafts/{draftId} with body (draftId excluded)", async () => {
         mockMutate.mockResolvedValue({ success: true });
-        const input = { draftId: 1, issueDate: "2024-02-01", contactId: 5 };
+        const input = {
+            draftId: 1,
+            customerId: 5,
+            daysUntilDueDate: 21,
+            issueDate: "2024-02-01",
+            lines: [{ quantity: 2, comment: "Updated", incomeAccount: "3000" }],
+        };
         const result = await server.getHandler("fiken_update_offer_draft")(input);
         expect(mockMutate).toHaveBeenCalledWith("PUT", "/companies/test-slug/offers/drafts/1", {
+            type: "offer",
+            customerId: 5,
+            daysUntilDueDate: 21,
             issueDate: "2024-02-01",
-            contactId: 5,
+            lines: [{ quantity: 2, comment: "Updated", incomeAccount: "3000" }],
         });
         expect(result.isError).toBeUndefined();
     });
