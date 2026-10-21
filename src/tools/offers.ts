@@ -163,7 +163,12 @@ export function register(server: McpServer) {
         },
         async (body) => {
             try {
-                return ok(await mutate("POST", cp("/offers/drafts"), { type: "offer", ...body }));
+                return ok(
+                    await mutate("POST", cp("/offers/drafts"), {
+                        ...body,
+                        type: body.type ?? "offer",
+                    }),
+                );
             } catch (e) {
                 return err(e);
             }
@@ -197,8 +202,8 @@ export function register(server: McpServer) {
             try {
                 return ok(
                     await mutate("PUT", cp(`/offers/drafts/${draftId}`), {
-                        type: "offer",
                         ...body,
+                        type: body.type ?? "offer",
                     }),
                 );
             } catch (e) {
