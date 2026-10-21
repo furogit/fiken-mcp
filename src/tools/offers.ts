@@ -18,33 +18,53 @@ function err(e: unknown) {
     };
 }
 
-const draftSchema = z.object({
+const invoiceishDraftLine = z.object({
+    invoiceishDraftLineId: z.number().int().optional(),
+    net: z.number().int().optional().describe("Net amount in cents"),
+    vat: z.number().int().optional().describe("VAT amount in cents"),
+    vatType: z
+        .string()
+        .optional()
+        .describe('VAT type, e.g. "HIGH", "NONE", "LOW", "EXEMPT_IMPORT_EXPORT"'),
+    gross: z.number().int().optional().describe("Gross amount in cents"),
+    vatInPercent: z.number().optional().describe("VAT percentage from 0 to 100"),
+    unitPrice: z.number().int().optional().describe("Net price per unit in cents"),
+    quantity: z.number().describe("Number of units"),
+    discount: z.number().optional().describe("Discount percentage"),
+    productName: z.string().optional(),
+    productId: z.number().int().optional(),
+    description: z.string().optional(),
+    comment: z.string().optional(),
+    incomeAccount: z.string().optional().describe('Account code, e.g. "3000"'),
+});
+
+const roundingType = z
+    .enum(["none", "round_half", "round_whole", "round_down_half", "round_down_whole"])
+    .optional();
+
+/** Fiken POST/PUT /offers/drafts uses invoiceishDraftRequest. */
+export const offerDraftSchema = z.object({
+    type: z
+        .enum(["invoice", "cash_invoice", "offer", "order_confirmation", "credit_note"])
+        .default("offer")
+        .describe('Draft type. Offer drafts use "offer"'),
+    uuid: z.string().optional(),
     issueDate: z.string().optional().describe("YYYY-MM-DD"),
-    daysUntilDueDate: z.number().int().optional(),
+    daysUntilDueDate: z.number().int().describe("Days until due date"),
     invoiceText: z.string().optional(),
     yourReference: z.string().optional(),
     ourReference: z.string().optional(),
     orderReference: z.string().optional(),
-    lines: z
-        .array(
-            z.object({
-                description: z.string().optional(),
-                netPrice: z.number().int().optional(),
-                vat: z.number().int().optional(),
-                vatType: z.string().optional(),
-                unit: z.string().optional(),
-                unitPrice: z.number().int().optional(),
-                quantity: z.number().optional(),
-                discount: z.number().optional(),
-                productId: z.number().int().optional(),
-                account: z.string().optional(),
-            }),
-        )
-        .optional(),
-    currency: z.string().optional(),
-    contactId: z.number().int().optional(),
+    lines: z.array(invoiceishDraftLine).optional(),
+    currency: z.string().optional().describe('ISO 4217, e.g. "NOK"'),
+    bankAccountNumber: z.string().optional(),
+    iban: z.string().optional(),
+    bic: z.string().optional(),
+    paymentAccount: z.string().optional().describe("Account code for payment"),
+    customerId: z.number().int().describe("Customer contact ID"),
     contactPersonId: z.number().int().optional(),
     projectId: z.number().int().optional(),
+    roundingType,
 });
 
 export function register(server: McpServer) {
@@ -139,11 +159,11 @@ export function register(server: McpServer) {
         {
             ...W,
             description: "Creates a new offer draft",
-            inputSchema: draftSchema,
+            inputSchema: offerDraftSchema,
         },
         async (body) => {
             try {
-                return ok(await mutate("POST", cp("/offers/drafts"), body));
+                return ok(await mutate("POST", cp("/offers/drafts"), { type: "offer", ...body }));
             } catch (e) {
                 return err(e);
             }
@@ -171,11 +191,16 @@ export function register(server: McpServer) {
         {
             ...W,
             description: "Updates an offer draft",
-            inputSchema: z.object({ draftId: z.number().int(), ...draftSchema.shape }),
+            inputSchema: z.object({ draftId: z.number().int(), ...offerDraftSchema.shape }),
         },
         async ({ draftId, ...body }) => {
             try {
-                return ok(await mutate("PUT", cp(`/offers/drafts/${draftId}`), body));
+                return ok(
+                    await mutate("PUT", cp(`/offers/drafts/${draftId}`), {
+                        type: "offer",
+                        ...body,
+                    }),
+                );
             } catch (e) {
                 return err(e);
             }
